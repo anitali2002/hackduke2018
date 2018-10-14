@@ -3,7 +3,7 @@ import os
 import jinja2
 import ast
 import json
-import xmltodict
+# import xmltodict
 from models import WordBank
 # from google.cloud import vision
 from google.appengine.api import urlfetch
@@ -36,6 +36,15 @@ def diffFetch(wordSearch):
         difficulty = searchDiffResult["ten_degree"]
         return difficulty
 
+def parseList(workList):
+    answerList= [];
+    for(i=0;i<ln(wordList);i++):
+        if(diffSearch(workList(i)) >= 5):
+            answerList = answerList + [workList(i)]
+    return answerList;
+
+
+
 # Dictionary API Call
 def defFetch(wordSearch):
     headers = {"X-Mashape-Key": "9exudehMOfmshNrJJbbbzboGC5KAp1O0OMwjsncunodfJUcM0n",
@@ -49,13 +58,14 @@ def defFetch(wordSearch):
     definition = searchDefResult["meaning"]
     return definition
 
+
 # Medical Dictionary API Call
 def medDictFetch(wordSearch):
     medSearch = "https://wsearch.nlm.nih.gov/ws/query?db=healthTopics&term="+ wordSearch
     searchMedResult = urlfetch.fetch(url = medSearch)
     # searchMedResult = json.dumps(xmltodict.parse(searchMedResult))
-    with open(searchMedResult) as fd:
-         medDefinition = xmltodict.parse(fd.read())
+    #with open(searchMedResult) as fd:
+    medDefinition = 1 #xmltodict.parse(fd.read())
     # searchMedResult = ast.literal_eval(searchMedResult.content)
     return medDefinition
 
@@ -66,12 +76,12 @@ class HomePage(webapp2.RequestHandler):
         word = "hermatology"
         diff = diffFetch(word)
         definition = defFetch(word)
-        medDefinition = medDictFetch(word)
+        # medDefinition = medDictFetch(word)
         templateDict = {
             "word": word,
             "diff": diff,
             "def": definition,
-            "medDef": medDefinition
+            # "medDef": medDefinition
         }
         self.response.write(homeTemplate.render(templateDict))
 
