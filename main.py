@@ -7,11 +7,35 @@ import json
 from models import WordBank
 # from google.cloud import vision
 from google.appengine.api import urlfetch
+# from collections import defaultdict
+# from xml.etree import cElementTree as ET
+# import untangle
 
 theJinjaEnvironment = jinja2.Environment(
     loader = jinja2.FileSystemLoader(os.path.dirname(__file__)),
     extensions = [],
     autoescape = True)
+
+# #xml to json
+# def etree_to_dict(t):
+#     d = {t.tag: {} if t.attrib else None}
+#     children = list(t)
+#     if children:
+#         dd = defaultdict(list)
+#         for dc in map(etree_to_dict, children):
+#             for k, v in dc.items():
+#                 dd[k].append(v)
+#         d = {t.tag: {k:v[0] if len(v) == 1 else v for k, v in dd.items()}}
+#     if t.attrib:
+#         d[t.tag].update(('@' + k, v) for k, v in t.attrib.items())
+#     if t.text:
+#         text = t.text.strip()
+#         if children or t.attrib:
+#             if text:
+#               d[t.tag]['#text'] = text
+#         else:
+#             d[t.tag] = text
+#     return d
 
 # OCR API Call
 # def convertFetch():
@@ -31,19 +55,17 @@ def diffFetch(wordSearch):
     searchDiffResult = urlfetch.fetch(url = diffSearch, headers = headers)
     searchDiffResult = ast.literal_eval(searchDiffResult.content)
     if ("ten_degree" not in searchDiffResult):
-        return 10;
+        return 10
     else:
         difficulty = searchDiffResult["ten_degree"]
-        return difficulty
+        return int(difficulty)
 
-def parseList(workList):
-    answerList= [];
-    for(i=0;i<ln(wordList);i++):
-        if(diffSearch(workList(i)) >= 5):
-            answerList = answerList + [workList(i)]
-    return answerList;
-
-
+def parseList(wordList):
+    answerList= []
+    for word in wordList:
+        if(diffFetch(word) >= 5):
+            answerList.append(word)
+    return answerList
 
 # Dictionary API Call
 def defFetch(wordSearch):
@@ -55,248 +77,85 @@ def defFetch(wordSearch):
     searchDefResult = ast.literal_eval(searchDefResult.content)
     if ("meaning" not in searchDefResult):
         return "";
-    definition = searchDefResult["meaning"]
+    if (searchDefResult["meaning"]["noun"] == ""):
+        definition = searchDefResult["meaning"]["adjective"]
+    else:
+        definition = searchDefResult["meaning"]["noun"]
     return definition
 
 
-# Medical Dictionary API Call
-def medDictFetch(wordSearch):
-    medSearch = "https://wsearch.nlm.nih.gov/ws/query?db=healthTopics&term="+ wordSearch
-    searchMedResult = urlfetch.fetch(url = medSearch)
-    # searchMedResult = json.dumps(xmltodict.parse(searchMedResult))
-    #with open(searchMedResult) as fd:
-    medDefinition = 1 #xmltodict.parse(fd.read())
-    # searchMedResult = ast.literal_eval(searchMedResult.content)
-    return medDefinition
+# # Medical Dictionary API Call
+# def medDictFetch(wordSearch):
+#     medSearch = "https://wsearch.nlm.nih.gov/ws/query?db=healthTopics&term="+ wordSearch
+#     searchResult = urlfetch.fetch(url = medSearch).toString()
+#     # medResult = ET.XML(searchResult)
+#     # searchMedResult = json.dumps(xmltodict.parse(searchMedResult))
+#     #with open(searchMedResult) as fd:
+#     medDefinition = etree_to_dict(searchResult)
+#     # medDefinition = untangle.parse(searchResult)
+#
+#     # searchMedResult = ast.literal_eval(searchMedResult.content)
+#     return medDefinition
 
 # HomePage
 class HomePage(webapp2.RequestHandler):
     def get(self):
-        homeTemplate = theJinjaEnvironment.get_template('templates/test.html')
-        word = "hermatology"
-        diff = diffFetch(word)
-        definition = defFetch(word)
-        # medDefinition = medDictFetch(word)
-        templateDict = {
-            "word": word,
-            "diff": diff,
-            "def": definition,
-            # "medDef": medDefinition
-        }
-        self.response.write(homeTemplate.render(templateDict))
+        homeTemplate = theJinjaEnvironment.get_template('templates/home.html')
+        self.response.write(homeTemplate.render())
 
-# # DocAnalysisPage
-# class DocAnalysisPage(webapp2.RequestHandler):
-#     def get(self):
-#         self.post()
-#
-#     def post(self):
-#         docAnalysisTemplate = theJinjaEnvironment.get_template('templates/docAnalysis.html')
-#         allergyName = self.request.get("allergyName")
-#         templateDict = {
-#             "allergyName": allergyName
-#         }
-#         self.response.write(recipeSubmitTemplate.render(templateDict))
-#
-# #
-# class GenInfoPage(webapp2.RequestHandler):
-#     def get(self):
-#         self.post()
-#
-#     def post(self):
-#         genInfoTemplate = theJinjaEnvironment.get_template('templates/genInfo.html')
-#
-#         questionsDatabase = Questions.query().fetch()
-#
-#         userQuestion = self.request.get("userQuestion")
-#
-#         question = None
-#
-#         for i in range(len(questionsDatabase)):
-#             if (questionsDatabase[i].question == userQuestion):
-#                 question = questionsDatabase[i]
-#
-#         if question == None and not userQuestion == "":
-#             question = Questions(question = userQuestion)
-#             question.put()
-#
-#         answerName = self.request.get("answerName")
-#         answer = self.request.get("answer")
-#         questionKey = self.request.get("questionKey")
-#
-#         if (not answerName == "" and not answer == ""):
-#             for i in range(len(questionsDatabase)):
-#                 if (questionsDatabase[i].question == questionKey):
-#                     question = questionsDatabase[i]
-#             question.answerNames.append(answerName)
-#             question.answers.append(answer)
-#             question.put()
-#
-#         questionsDatabase = Questions.query().fetch()
-#
-#         # if (not question == None):
-#         #     if (not question in questionsDatabase):
-#         #         questionsDatabase.append(question)
-#         #
-#         # print(questionsDatabase)
-#
-#         templateDict = {
-#             "questionsDatabase": questionsDatabase
-#         }
-#
-#         self.response.write(genInfoTemplate.render(templateDict))
-#
-# class AllergyInfoPage(webapp2.RequestHandler):
-#     def get(self):
-#         self.post()
-#
-#     def post(self):
-#         allergyTemplate = theJinjaEnvironment.get_template('templates/allergyInfo.html')
-#
-#         allergyName = self.request.get("allergyName")
-#
-#         allergy = allergySearch(allergyName)
-#
-#         # posts the selected recipe- if there is a link, goes to the link. if not, go to recipe html template
-#         if (allergy == None):
-#             self.redirect("/submitAllergy")
-#             return
-#
-#         ingredientsSearch = self.request.get("ingredients") + ",-" + allergyName
-#         typeSearch = self.request.get("type")
-#
-#         # comments about the allergy
-#         commentName = self.request.get("commentName")
-#         comment = self.request.get("comment")
-#
-#         if (not commentName == "" and not comment == ""):
-#             allergy.commentNames.append(commentName)
-#             allergy.comments.append(comment)
-#
-#         allergy.put()
-#
-#         templateDict = {
-#             "allergyName": allergy.allergy,
-#             "symptoms": allergy.symptoms,
-#             "toAvoid": allergy.toAvoid,
-#             "images": allergy.images,
-#             "dataRecipes": recipesSearch(allergy.allergy),
-#             "apiRecipes": recipeFetch(ingredientsSearch, typeSearch),
-#             "commentName": allergy.commentNames,
-#             "comment": allergy.comments
-#         }
-#
-#         self.response.write(allergyTemplate.render(templateDict))
-#
-# # allergy submit page will just go back home
-# class AllergySubmitPage(webapp2.RequestHandler):
-#     def get(self):
-#         self.post()
-#
-#     def post(self):
-#         allergySubmitTemplate = theJinjaEnvironment.get_template('templates/allergySubmit.html')
-#         self.response.write(allergySubmitTemplate.render())
-#
-# class RecipePage(webapp2.RequestHandler):
-#     def get(self):
-#         self.post()
-#
-#     def post(self):
-#         recipeTemplate = theJinjaEnvironment.get_template('templates/recipe.html')
-#
-#         recipeName = self.request.get("recipeName")
-#
-#         recipesDatabase = Recipe.query().fetch()
-#
-#         recipe = None
-#
-#         for i in range(len(recipesDatabase)):
-#             if (recipesDatabase[i].title == recipeName):
-#                 recipe = recipesDatabase[i]
-#
-#         allergyName = self.request.get("allergyName")
-#
-#         templateDict = {
-#             "allergyName": allergyName,
-#             "title": recipe.title,
-#             "allergenFree": recipe.allergenFree,
-#             "otherTags": recipe.otherTags,
-#             "basicIngredients": recipe.basicIngredients,
-#             "ingredients": recipe.ingredients,
-#             "steps": recipe.steps,
-#         }
-#
-#         self.response.write(recipeTemplate.render(templateDict))
-#
-# class ThanksPage(webapp2.RequestHandler):
-#     def post(self):
-#         thanksTemplate = theJinjaEnvironment.get_template('templates/thanks.html')
-#
-#         allergyName = self.request.get("allergyName")
-#         submission = self.request.get("submission")
-#
-#         message = ""
-#         destination = ""
-#
-#         if (submission == "recipe"):
-#             #recipe submit
-#             title = self.request.get("title")
-#             allergenFree = self.request.get("allergenFree")
-#             basicIngredients = self.request.get("basicIngredients") #list
-#             ingredients = self.request.get("ingredients") #list
-#             ingredients = formatString(ingredients)
-#             otherTags = self.request.get("otherTags") #list
-#             otherTags = formatString(otherTags)
-#             steps = self.request.get("steps") #list
-#             steps = steps.replace("\r", "")
-#             steps = formatString(steps)
-#
-#             recipe = Recipe(title = title, allergenFree = allergenFree, basicIngredients = basicIngredients)
-#
-#             for ingredient in ingredients:
-#                 recipe.ingredients.append(ingredient)
-#             for otherTag in otherTags:
-#                 recipe.otherTags.append(otherTag)
-#             for step in steps:
-#                 recipe.steps.append(step)
-#
-#             recipe.put()
-#
-#             message = "Thanks for submitting a new recipe."
-#             destination = "/allergyInfo?allergyName=" + allergenFree
-#
-#         if (submission == "allergy"):
-#             # allergy submit
-#             allergy = self.request.get("allergen")
-#             symptoms = self.request.get("symptoms")
-#             symptoms = formatString(symptoms)
-#             toAvoid = self.request.get("toAvoid")
-#             toAvoid = formatString(toAvoid)
-#             images = self.request.get("allergenImg")
-#             images = formatString(images)
-#
-#             allergy = Allergy(allergy = allergy)
-#
-#             for symptom in symptoms:
-#                 allergy.symptoms.append(symptom)
-#             for product in toAvoid:
-#                 allergy.toAvoid.append(product)
-#             for link in images:
-#                 allergy.images.append(link)
-#
-#             allergy.put()
-#
-#             message = "Thanks for submitting a new allergy."
-#             destination = "/"
-#
-#         templateDict = {
-#             # "allergyName": allergyName,
-#             "message": message,
-#             "destination": destination
-#         }
-#
-#         self.response.write(thanksTemplate.render(templateDict))
+# DocAnalysisPage
+class DocAnalysisPage(webapp2.RequestHandler):
+    def get(self):
+        self.post()
+
+    def post(self):
+        docAnalysisTemplate = theJinjaEnvironment.get_template('templates/docAnalysis.html')
+
+        userText = self.request.get("userText")
+        content = userText.split(" ")
+
+        diffWords = parseList(content)
+
+        for word in diffWords:
+            diffWord = WordBank(word = word, definition = defFetch(word))
+            diffWord.put()
+
+        wordBankDatabase = WordBank.query().fetch()
+
+        wordSearch = self.request.get("wordSearch")
+
+        if (not wordSearch == ""):
+            searchWord = WordBank(word = wordSearch, definition = defFetch(wordSearch))
+            searchWord.put()
+
+        wordBankDatabase = WordBank.query().fetch()
+
+        wordList = []
+        definitionList = []
+
+        for i in range(len(wordBankDatabase)):
+            if(wordBankDatabase[i].word not in wordList):
+                wordList.append(wordBankDatabase[i].word)
+                definitionList.append(wordBankDatabase[i].definition)
+
+        templateDict = {
+            "userText": userText,
+            "words": wordList,
+            "definitions": definitionList
+        }
+
+        self.response.write(docAnalysisTemplate.render(templateDict))
+
+class CiscoPage(webapp2.RequestHandler):
+    def get(self):
+        self.post()
+
+    def post(self):
+        ciscoTemplate = theJinjaEnvironment.get_template('templates/Cisco.html')
+        self.response.write(ciscoTemplate.render())
 
 app = webapp2.WSGIApplication([
-    ('/', HomePage)
+    ('/', HomePage),
+    ('/docAnalysis', DocAnalysisPage),
+    ('/Cisco', CiscoPage)
 ], debug=True)

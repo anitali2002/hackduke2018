@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>On The Same Page</title>
+
+    <!-- load stylesheets -->
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:300,400">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/magnific-popup.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.bundle.min.js"></script>
+
+      </head>
+
+      <body>
+        <div class="container-fluid">
+
+            <section id="welcome" class="tm-content-box tm-banner margin-b-10">
+                <div class="tm-banner-inner">
+                    <h1 class="tm-banner-title"><font size="7">On The Same Page</font> </h1>
+                </div>
+            </section>
+
+<!--analyze-->
+<div class="container">
+  <div class="row">
+    <div class="col" id="text">
+      <p> {{userText}} </p>
+    </div>
+    <div class="col" id="definitions">
+      {% for i in range(words|length) %}
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title"> {{words[i]}} </h5>
+          <p class="card-text"> {{definitions[i]}} </p>
+          <a href="https://www.google.com/search?q={{words[i]}}&rlz=1C1CHBF_enUS759US759&oq={{words[i]}}&aqs=chrome..69i57.7024j0j1&sourceid=chrome&ie=UTF-8" class="card-link"> See More </a>
+        </div>
+      </div>
+      {% endfor %}
+      <div id="searchWord">
+        <form method = "post">
+          <input type="text" value="Seach for a word" name="wordSearch"><br>
+          <input type="submit" value="Submit">
+        </form>
+      </div>
+  </div>
+</div>
+
+<!-- testing -->
+
+                    <!-- slider -->
+
+                    <section id="contact" class="tm-content-box">
+
+                        <div class="tm-flex">
+                            <div class="tm-contact-left-half tm-gray-bg">
+                                <div class="tm-contact-inner-pad">
+                                    <h2 class="tm-section-title">Memo</h2>
+
+                                        <form action="/Cisco">
+
+                                        <button type="submit" id="submit-btn" class="btn btn-primary pull-xs-right tm-button tm-button-normal" >Memo</button>
+                                      </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                    </section>
+
+                    <footer class="tm-footer">
+                        <p class="text-xs-center">Deleted by Mary & Designed by Fabian &copy; <a target="_parent">OnTheSamePage</a></p>
+                    </footer>
+
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- JS files -->
+
+
+        <script src="/js/jquery-1.11.3.min.js"></script>
+        <script src="/js/jquery.magnific-popup.min.js"></script>
+        <script src="/js/jquery.singlePageNav.min.js"></script>
+
+    </body>
+    </html>
