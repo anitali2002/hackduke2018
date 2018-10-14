@@ -2,7 +2,10 @@ import webapp2
 import os
 import jinja2
 import ast
+import json
+import xmltodict
 from models import WordBank
+# from google.cloud import vision
 from google.appengine.api import urlfetch
 
 theJinjaEnvironment = jinja2.Environment(
@@ -11,50 +14,66 @@ theJinjaEnvironment = jinja2.Environment(
     autoescape = True)
 
 # OCR API Call
-def convertFetch(allergySearch):
-    return allergySearch
+# def convertFetch():
+#     # key =
+#     client = vision.ImageAnnotatorClient()
+#     response = client.annotate_image({
+#        'image': {'source': {'image_uri': "https://cdn.psychologytoday.com/sites/default/files/styles/image-article_inline_full/public/field_blog_entry_images/STOP.jpg?itok=S3B7WgUc"}}
+#     })
+#     return response
 
 # Difficulty API Call
 def diffFetch(wordSearch):
-    headers = {"X-Mashape-Key": "iiToENZRoxmshW5FvuANkOISJ0RBp1vf08fjsntXGdecY2QYnf",
+    headers = {"X-Mashape-Key": "9exudehMOfmshNrJJbbbzboGC5KAp1O0OMwjsncunodfJUcM0n",
                 "Accept": "application/json"}
 
     diffSearch = "https://twinword-word-graph-dictionary.p.mashape.com/difficulty/?entry="+ wordSearch
     searchDiffResult = urlfetch.fetch(url = diffSearch, headers = headers)
     searchDiffResult = ast.literal_eval(searchDiffResult.content)
-    difficulty = searchDiffResult["meaning"]["noun"]
-
-    return difficulty
+    if ("ten_degree" not in searchDiffResult):
+        return 10;
+    else:
+        difficulty = searchDiffResult["ten_degree"]
+        return difficulty
 
 # Dictionary API Call
 def defFetch(wordSearch):
-    headers = {"X-Mashape-Key": "iiToENZRoxmshW5FvuANkOISJ0RBp1vf08fjsntXGdecY2QYnf",
+    headers = {"X-Mashape-Key": "9exudehMOfmshNrJJbbbzboGC5KAp1O0OMwjsncunodfJUcM0n",
                 "Accept": "application/json"}
 
     defSearch = "https://twinword-word-graph-dictionary.p.mashape.com/definition/?entry="+ wordSearch
     searchDefResult = urlfetch.fetch(url = defSearch, headers = headers)
     searchDefResult = ast.literal_eval(searchDefResult.content)
-    definition = searchResult["meaning"]["noun"]
-
+    if ("meaning" not in searchDefResult):
+        return "";
+    definition = searchDefResult["meaning"]
     return definition
 
 # Medical Dictionary API Call
-def medDictFetch(word):
-    return word
+def medDictFetch(wordSearch):
+    medSearch = "https://wsearch.nlm.nih.gov/ws/query?db=healthTopics&term="+ wordSearch
+    searchMedResult = urlfetch.fetch(url = medSearch)
+    # searchMedResult = json.dumps(xmltodict.parse(searchMedResult))
+    with open(searchMedResult) as fd:
+         medDefinition = xmltodict.parse(fd.read())
+    # searchMedResult = ast.literal_eval(searchMedResult.content)
+    return medDefinition
 
 # HomePage
 class HomePage(webapp2.RequestHandler):
     def get(self):
         homeTemplate = theJinjaEnvironment.get_template('templates/test.html')
-        word = "cardiovascular"
+        word = "hermatology"
         diff = diffFetch(word)
-        def = defFetch(word)
+        definition = defFetch(word)
+        medDefinition = medDictFetch(word)
         templateDict = {
             "word": word,
             "diff": diff,
-            "def": def
+            "def": definition,
+            "medDef": medDefinition
         }
-        self.response.write(allergyTemplate.render(templateDict))
+        self.response.write(homeTemplate.render(templateDict))
 
 # # DocAnalysisPage
 # class DocAnalysisPage(webapp2.RequestHandler):
@@ -269,5 +288,5 @@ class HomePage(webapp2.RequestHandler):
 #         self.response.write(thanksTemplate.render(templateDict))
 
 app = webapp2.WSGIApplication([
-    ('/', WelcomePage)
+    ('/', HomePage)
 ], debug=True)
